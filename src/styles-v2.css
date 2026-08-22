@@ -1,2 +1,12 @@
-/* v2 */
-@media print{.sheet{height:297mm;overflow:hidden}}
+/* AJUSTE FINAL DE FORMATO */
+.sheet{height:297mm;min-height:297mm;overflow:hidden;padding:6mm 9mm 4mm;display:flex;flex-direction:column}
+header{height:34mm;flex:none}.logo{width:80mm}
+.types{height:10mm;flex:none}
+.client{height:14mm;grid-template-columns:2fr 3fr 4fr 3fr 2fr 3fr 4fr 2fr;flex:none}
+.client-field{min-width:0}.client-field input{min-width:0;font-size:9px}
+.field-1{grid-column:1/2}.field-2{grid-column:2/4}.field-3{grid-column:4/7}.field-4{grid-column:7/9}.field-5{grid-column:1/5}.field-6{grid-column:5/7}.field-7{grid-column:7/8}.field-8{grid-column:8/9}
+.table{flex:none}.thead{height:6mm}.tr{height:5.4mm}.total{height:5.7mm}.letters{height:7mm;min-height:7mm}.letters span{font-size:8.5px}
+.obs{height:var(--obs-height,9mm);min-height:7mm;max-height:16mm;overflow:hidden;flex:none}.obs textarea{height:calc(100% - 14px);min-height:8px;overflow:hidden}
+.conditions{height:11mm;min-height:11mm;flex:none}.flete{height:7mm;flex:none}
+footer{height:20mm;padding-top:8mm;flex:none}
+@media print{html,body,#root{width:210mm;height:297mm;background:#fff}.app{padding:0}.no-print{display:none!important}.sheet{width:210mm;height:297mm;min-height:297mm;margin:0;padding:6mm 9mm 4mm;box-shadow:none;overflow:hidden}@page{size:A4 portrait;margin:0}}
