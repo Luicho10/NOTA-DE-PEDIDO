@@ -26,15 +26,20 @@ export default function AuthGate() {
 
   useEffect(() => {
     if (!session) return;
+
+    // No bloquear la apertura de la aplicación por las consultas a la nube.
+    // Primero mostramos la aplicación con los datos locales y luego sincronizamos
+    // Supabase en segundo plano.
+    installCloudStorageSync();
+    setBooting(false);
+
     (async () => {
       try {
-        setBooting(true);
         await supabase.rpc("provisionar_vendedor");
         await hydrateLocalStorage();
-        installCloudStorageSync();
       } catch (e) {
-        setError(e.message || "No fue posible preparar la sesión.");
-      } finally { setBooting(false); }
+        console.error("Sincronización inicial:", e);
+      }
     })();
   }, [session]);
 
@@ -50,7 +55,7 @@ export default function AuthGate() {
     finally { setBooting(false); }
   }
 
-  if (loading || (session && booting)) return <div className="auth-screen"><div className="auth-card"><h2>MÁSFERTIL S.A.</h2><p>Preparando sistema de Nota de Pedido...</p></div></div>;
+  if (loading) return <div className="auth-screen"><div className="auth-card"><h2>MÁSFERTIL S.A.</h2><p>Preparando sistema de Nota de Pedido...</p></div></div>;
   if (session && !error) return <App />;
 
   return <div className="auth-screen"><form className="auth-card" onSubmit={submit}>
