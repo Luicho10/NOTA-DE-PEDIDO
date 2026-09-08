@@ -6,7 +6,6 @@ import App from "./App";
 export default function AuthGate() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [booting, setBooting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -27,24 +26,22 @@ export default function AuthGate() {
   useEffect(() => {
     if (!session) return;
 
-    // No bloquear la apertura de la aplicación por las consultas a la nube.
-    // Primero mostramos la aplicación con los datos locales y luego sincronizamos
-    // Supabase en segundo plano.
-    installCloudStorageSync();
-    setBooting(false);
-
+    // La aplicación abre inmediatamente usando la información local.
+    // La sincronización con Supabase se realiza después, sin bloquear la pantalla.
     (async () => {
       try {
         await supabase.rpc("provisionar_vendedor");
         await hydrateLocalStorage();
       } catch (e) {
         console.error("Sincronización inicial:", e);
+      } finally {
+        installCloudStorageSync();
       }
     })();
   }, [session]);
 
   async function submit(e) {
-    e.preventDefault(); setError(""); setBooting(true);
+    e.preventDefault(); setError("");
     try {
       const result = mode === "login"
         ? await supabase.auth.signInWithPassword({ email, password })
@@ -52,7 +49,6 @@ export default function AuthGate() {
       if (result.error) throw result.error;
       if (mode === "signup" && !result.data.session) setError("Cuenta creada. Revise su correo para confirmar el acceso.");
     } catch (err) { setError(err.message || "No fue posible acceder."); }
-    finally { setBooting(false); }
   }
 
   if (loading) return <div className="auth-screen"><div className="auth-card"><h2>MÁSFERTIL S.A.</h2><p>Preparando sistema de Nota de Pedido...</p></div></div>;
