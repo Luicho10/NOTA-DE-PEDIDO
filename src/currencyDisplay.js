@@ -5,12 +5,14 @@ function convertirNodoTexto(node) {
   let text = node.nodeValue;
   const original = text;
 
+  // Reemplazamos las expresiones completas de moneda para evitar convertir US$ en UGs.
   text = text.replace(/Total de Dólares americanos \(US\$\)/gi, "Total de Guaraníes (Gs.)");
   text = text.replace(/Dólares americanos \(US\$\)/gi, "Guaraníes (Gs.)");
   text = text.replace(/DÓLARES AMERICANOS/gi, "GUARANÍES");
   text = text.replace(/Dólares americanos/gi, "Guaraníes");
-  text = text.replace(/\$\s*([\d.]+),00\b/g, "Gs. $1");
-  text = text.replace(/\$\s*/g, "Gs. ");
+  text = text.replace(/US\$\s*([\d.]+),00\b/gi, "Gs. $1,00");
+  text = text.replace(/US\$\s*/gi, "Gs. ");
+  text = text.replace(/\bU?Gs\.\s*/gi, "Gs. ");
 
   if (text !== original) node.nodeValue = text;
 }
