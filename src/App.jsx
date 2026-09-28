@@ -33,7 +33,6 @@ export default function App(){
  const [editingPrice,setEditingPrice]=useState(null);
  const total=useMemo(()=>items.reduce((s,i)=>s+Number(i.cantidad||0)*parseMoney(i.precio),0),[items]);
  const obsLines=Math.min(4,Math.max(1,Math.ceil(Math.max(1,obs.length)/90)+Math.max(0,obs.split("\n").length-1)));
-/g)||[]).length)));
  const obsHeight=`${8+obsLines*3}mm`;
  const symbol=currency==="USD"?"US$":"Gs.";
  const currencyLabel=currency==="USD"?"DÓLARES AMERICANOS":"GUARANÍES";
