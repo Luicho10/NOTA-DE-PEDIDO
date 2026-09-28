@@ -5,11 +5,11 @@ const CLIENT_KEY="masfertil_clientes_v1", ORDER_KEY="masfertil_pedidos_v1", NEXT
 const blank=()=>({cantidad:"",unidad:"",descripcion:"",precio:""});
 const emptyClient={ruc:"",nombre:"",area:"",direccion:"",region:"",telefono:"",correo:"",ciudad:""};
 const money=(v,currency="PYG")=>Number(v||0).toLocaleString("es-PY",currency==="USD"?{minimumFractionDigits:2,maximumFractionDigits:2}:{minimumFractionDigits:0,maximumFractionDigits:0});
-const parseMoney=v=>{const s=String(v??"").trim();if(!s)return 0;if(s.includes(","))return Number(s.replace(/./g,"").replace(",","."))||0;if(/^d{1,3}(.d{3})+$/.test(s))return Number(s.replace(/./g,""))||0;return Number(s)||0};
+const parseMoney=v=>{const s=String(v??"").trim();if(!s)return 0;if(s.includes(","))return Number(s.split(".").join("").replace(",","."))||0;if(s.includes("."))return Number(s.split(".").join(""))||0;return Number(s)||0};
 const formatMoneyInput=(v,currency="PYG")=>{const n=parseMoney(v);return n?money(n,currency):""};
 const fmtDate=v=>v?new Date(`${v}T00:00:00`).toLocaleDateString("es-PY"):"";
 function load(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
-function key(v){return String(v||"").trim().replace(/s/g,"")}
+function key(v){return String(v||"").trim().split(" ").join("")}
 function loadDraft(){return load(DRAFT_KEY,null)}
 const UNIDADES=["CERO","UNO","DOS","TRES","CUATRO","CINCO","SEIS","SIETE","OCHO","NUEVE"];
 const DIEZ_DIECINUEVE=["DIEZ","ONCE","DOCE","TRECE","CATORCE","QUINCE","DIECISÉIS","DIECISIETE","DIECIOCHO","DIECINUEVE"];
@@ -18,7 +18,7 @@ const CENTENAS=["","CIENTO","DOSCIENTOS","TRESCIENTOS","CUATROCIENTOS","QUINIENT
 function grupo(n){n=Number(n);if(n===0)return "";if(n<10)return UNIDADES[n];if(n<20)return DIEZ_DIECINUEVE[n-10];if(n<30)return n===20?"VEINTE":"VEINTI"+UNIDADES[n-20].toLowerCase().toUpperCase();if(n<100)return DECENAS[Math.floor(n/10)]+(n%10?" Y "+UNIDADES[n%10]:"");if(n<200)return n===100?"CIEN":"CIENTO "+grupo(n-100);return CENTENAS[Math.floor(n/100)]+(n%100?" "+grupo(n%100):"")}
 function numeroLetras(n){n=Math.floor(Number(n||0));if(n===0)return "CERO";if(n<1000)return grupo(n);if(n<1000000){const miles=Math.floor(n/1000),resto=n%1000;return (miles===1?"MIL":grupo(miles)+" MIL")+(resto?" "+grupo(resto):"")}if(n<1000000000){const millones=Math.floor(n/1000000),resto=n%1000000;return (millones===1?"UN MILLÓN":grupo(millones)+" MILLONES")+(resto?" "+numeroLetras(resto):"")}const milesMillones=Math.floor(n/1000000000),resto=n%1000000000;return (milesMillones===1?"MIL MILLONES":numeroLetras(milesMillones)+" MIL MILLONES")+(resto?" "+numeroLetras(resto):"")}
 function words(n,currency){const value=Math.max(0,Number(n||0)),entero=Math.floor(value+0.000001),centavos=Math.round((value-entero)*100);const unit=currency==="USD"?"DÓLARES AMERICANOS":"GUARANÍES";let text=`${unit} ${numeroLetras(entero)}`;if(currency==="USD"&&centavos>0)text+=` CON ${numeroLetras(centavos)} CENTAVOS`;return text}
-function rowHeight(description){const len=String(description||"").length;const explicit=(String(description||"").match(/
+function rowHeight(description){const text=String(description||"");const len=text.length;const explicit=text.split("\n").length;const estimated=Math.ceil(Math.max(1,len)/48);return `${Math.max(5.5,Math.max(explicit,estimated)*5.5)}mm`}
 /g)||[]).length+1;const estimated=Math.ceil(Math.max(1,len)/48);return `${Math.max(5.5,Math.max(explicit,estimated)*5.5)}mm`}
 export default function App(){
  const draft=loadDraft()||{};
@@ -33,7 +33,7 @@ export default function App(){
  const [isSaved,setIsSaved]=useState(()=>!!draft.isSaved),[editMode,setEditMode]=useState(()=>!!draft.editMode);
  const [editingPrice,setEditingPrice]=useState(null);
  const total=useMemo(()=>items.reduce((s,i)=>s+Number(i.cantidad||0)*parseMoney(i.precio),0),[items]);
- const obsLines=Math.min(4,Math.max(1,Math.ceil(Math.max(1,obs.length)/90)+Math.max(0,(obs.match(/
+ const obsLines=Math.min(4,Math.max(1,Math.ceil(Math.max(1,obs.length)/90)+Math.max(0,obs.split("\n").length-1)));
 /g)||[]).length)));
  const obsHeight=`${8+obsLines*3}mm`;
  const symbol=currency==="USD"?"US$":"Gs.";
