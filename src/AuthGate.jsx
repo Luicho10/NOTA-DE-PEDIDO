@@ -6,6 +6,7 @@ import App from "./App";
 export default function AuthGate() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cloudReady, setCloudReady] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -24,17 +25,17 @@ export default function AuthGate() {
   }, []);
 
   useEffect(() => {
-    if (!session) return;
-
-    // La aplicación abre inmediatamente usando la información local.
-    // La sincronización con Supabase se realiza después, sin bloquear la pantalla.
+    if (!session) { setCloudReady(false); return; }
+    setCloudReady(false);
     (async () => {
       try {
         await supabase.rpc("provisionar_vendedor");
         await hydrateLocalStorage();
+        installCloudStorageSync();
+        setCloudReady(true);
       } catch (e) {
         console.error("Sincronización inicial:", e);
-      } finally {
+        setCloudReady(true);
         installCloudStorageSync();
       }
     })();
@@ -52,6 +53,7 @@ export default function AuthGate() {
   }
 
   if (loading) return <div className="auth-screen"><div className="auth-card"><h2>MÁSFERTIL S.A.</h2><p>Preparando sistema de Nota de Pedido...</p></div></div>;
+  if (session && !error && !cloudReady) return <div className="auth-screen"><div className="auth-card"><h2>MÁSFERTIL S.A.</h2><p>Sincronizando pedidos y clientes...</p></div></div>;
   if (session && !error) return <App />;
 
   return <div className="auth-screen"><form className="auth-card" onSubmit={submit}>
