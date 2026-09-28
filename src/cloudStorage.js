@@ -219,37 +219,6 @@ function enqueueOrderSave(order) {
 }
 
 export function installCloudStorageSync() {
-  const original = Storage.prototype.setItem;
-  if (Storage.prototype.__masfertilCloudSync) return;
-  Storage.prototype.__masfertilCloudSync = true;
-
-  Storage.prototype.setItem = function(key, value) {
-    original.call(this, key, value);
-
-    if (key === CLIENT_KEY) {
-      try {
-        const map = JSON.parse(value || "{}");
-        Promise.all(Object.values(map).filter(c => c?.ruc).map(upsertClient)).catch(console.error);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    if (key === ORDER_KEY) {
-      try {
-        const orders = JSON.parse(value || "[]");
-        const previous = window.__masfertilCloudOrders || [];
-        const changed = orders.filter(o => {
-          const old = previous.find(x => n(x.number) === n(o.number));
-          return !old || JSON.stringify(old) !== JSON.stringify(o);
-        });
-        window.__masfertilCloudOrders = orders;
-        changed.forEach(enqueueOrderSave);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  };
+  return;
 }
-
 export { saveOrder, upsertClient };
