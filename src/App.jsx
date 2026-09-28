@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { findOrdersByRuc } from "./cloudStorage";
 
 const CLIENT_KEY="masfertil_clientes_v1", ORDER_KEY="masfertil_pedidos_v1", NEXT_KEY="masfertil_numero_v1", DRAFT_KEY="masfertil_nota_borrador_v1";
 const blank=()=>({cantidad:"",unidad:"",descripcion:"",precio:""});
 const emptyClient={ruc:"",nombre:"",area:"",direccion:"",region:"",telefono:"",correo:"",ciudad:""};
 const money=(v,currency="PYG")=>Number(v||0).toLocaleString("es-PY",currency==="USD"?{minimumFractionDigits:2,maximumFractionDigits:2}:{minimumFractionDigits:0,maximumFractionDigits:0});
-const parseMoney=v=>{const s=String(v??"").trim();if(!s)return 0;if(s.includes(","))return Number(s.replace(/\./g,"").replace(",","."))||0;if(/^\d{1,3}(\.\d{3})+$/.test(s))return Number(s.replace(/\./g,""))||0;return Number(s)||0};
+const parseMoney=v=>{const s=String(v??"").trim();if(!s)return 0;if(s.includes(","))return Number(s.replace(/./g,"").replace(",","."))||0;if(/^d{1,3}(.d{3})+$/.test(s))return Number(s.replace(/./g,""))||0;return Number(s)||0};
 const formatMoneyInput=(v,currency="PYG")=>{const n=parseMoney(v);return n?money(n,currency):""};
 const fmtDate=v=>v?new Date(`${v}T00:00:00`).toLocaleDateString("es-PY"):"";
 function load(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
-function key(v){return String(v||"").trim().replace(/\s/g,"")}
+function key(v){return String(v||"").trim().replace(/s/g,"")}
 function loadDraft(){return load(DRAFT_KEY,null)}
 const UNIDADES=["CERO","UNO","DOS","TRES","CUATRO","CINCO","SEIS","SIETE","OCHO","NUEVE"];
 const DIEZ_DIECINUEVE=["DIEZ","ONCE","DOCE","TRECE","CATORCE","QUINCE","DIECISÉIS","DIECISIETE","DIECIOCHO","DIECINUEVE"];
@@ -17,7 +18,8 @@ const CENTENAS=["","CIENTO","DOSCIENTOS","TRESCIENTOS","CUATROCIENTOS","QUINIENT
 function grupo(n){n=Number(n);if(n===0)return "";if(n<10)return UNIDADES[n];if(n<20)return DIEZ_DIECINUEVE[n-10];if(n<30)return n===20?"VEINTE":"VEINTI"+UNIDADES[n-20].toLowerCase().toUpperCase();if(n<100)return DECENAS[Math.floor(n/10)]+(n%10?" Y "+UNIDADES[n%10]:"");if(n<200)return n===100?"CIEN":"CIENTO "+grupo(n-100);return CENTENAS[Math.floor(n/100)]+(n%100?" "+grupo(n%100):"")}
 function numeroLetras(n){n=Math.floor(Number(n||0));if(n===0)return "CERO";if(n<1000)return grupo(n);if(n<1000000){const miles=Math.floor(n/1000),resto=n%1000;return (miles===1?"MIL":grupo(miles)+" MIL")+(resto?" "+grupo(resto):"")}if(n<1000000000){const millones=Math.floor(n/1000000),resto=n%1000000;return (millones===1?"UN MILLÓN":grupo(millones)+" MILLONES")+(resto?" "+numeroLetras(resto):"")}const milesMillones=Math.floor(n/1000000000),resto=n%1000000000;return (milesMillones===1?"MIL MILLONES":numeroLetras(milesMillones)+" MIL MILLONES")+(resto?" "+numeroLetras(resto):"")}
 function words(n,currency){const value=Math.max(0,Number(n||0)),entero=Math.floor(value+0.000001),centavos=Math.round((value-entero)*100);const unit=currency==="USD"?"DÓLARES AMERICANOS":"GUARANÍES";let text=`${unit} ${numeroLetras(entero)}`;if(currency==="USD"&&centavos>0)text+=` CON ${numeroLetras(centavos)} CENTAVOS`;return text}
-function rowHeight(description){const len=String(description||"").length;const explicit=(String(description||"").match(/\n/g)||[]).length+1;const estimated=Math.ceil(Math.max(1,len)/48);return `${Math.max(5.5,Math.max(explicit,estimated)*5.5)}mm`}
+function rowHeight(description){const len=String(description||"").length;const explicit=(String(description||"").match(/
+/g)||[]).length+1;const estimated=Math.ceil(Math.max(1,len)/48);return `${Math.max(5.5,Math.max(explicit,estimated)*5.5)}mm`}
 export default function App(){
  const draft=loadDraft()||{};
  const [number,setNumber]=useState(()=>draft.number??Math.max(51,Number(localStorage.getItem(NEXT_KEY)||51)));
@@ -31,7 +33,8 @@ export default function App(){
  const [isSaved,setIsSaved]=useState(()=>!!draft.isSaved),[editMode,setEditMode]=useState(()=>!!draft.editMode);
  const [editingPrice,setEditingPrice]=useState(null);
  const total=useMemo(()=>items.reduce((s,i)=>s+Number(i.cantidad||0)*parseMoney(i.precio),0),[items]);
- const obsLines=Math.min(4,Math.max(1,Math.ceil(Math.max(1,obs.length)/90)+Math.max(0,(obs.match(/\n/g)||[]).length)));
+ const obsLines=Math.min(4,Math.max(1,Math.ceil(Math.max(1,obs.length)/90)+Math.max(0,(obs.match(/
+/g)||[]).length)));
  const obsHeight=`${8+obsLines*3}mm`;
  const symbol=currency==="USD"?"US$":"Gs.";
  const currencyLabel=currency==="USD"?"DÓLARES AMERICANOS":"GUARANÍES";
@@ -41,7 +44,54 @@ export default function App(){
  function resetHistory(){setHistory([]);setShowHistory(false)}
  useEffect(()=>{try{localStorage.setItem(DRAFT_KEY,JSON.stringify(draftData()))}catch{}},[number,date,type,currency,client,query,items,obs,contado,plazo,semilla,venc,flete,status,isSaved,editMode]);
  useEffect(()=>{const keep=()=>{try{localStorage.setItem(DRAFT_KEY,JSON.stringify(draftData()))}catch{}};window.addEventListener("pagehide",keep);document.addEventListener("visibilitychange",keep);return()=>{window.removeEventListener("pagehide",keep);document.removeEventListener("visibilitychange",keep)}},[number,date,type,currency,client,query,items,obs,contado,plazo,semilla,venc,flete,status,isSaved,editMode]);
- function buscar(){const k=key(query),clients=load(CLIENT_KEY,{}),orders=load(ORDER_KEY,[]);if(!k){setMsg("Ingrese RUC/C.I.");return}if(clients[k]){setClient(clients[k]);setMsg("Cliente encontrado.")}else{setClient({...emptyClient,ruc:query});setMsg("Cliente no encontrado. Puede registrarlo.")}const h=orders.filter(o=>key(o.client?.ruc)===k).sort((a,b)=>Number(b.number)-Number(a.number));setHistory(h);setShowHistory(h.length>0)}
+ async function buscar(){
+   const k=key(query);
+   if(!k){setMsg("Ingrese RUC/C.I.");return}
+   setMsg("Consultando cliente y pedidos...");
+   try{
+     const cloudOrders=await findOrdersByRuc(query);
+     const clients=load(CLIENT_KEY,{});
+     const orders=load(ORDER_KEY,[]);
+     if(cloudOrders.length){
+       const map={...clients,[k]:cloudOrders[0].client};
+       const merged=[...orders.filter(o=>!cloudOrders.some(c=>Number(c.number)===Number(o.number))),...cloudOrders].sort((a,b)=>Number(b.number)-Number(a.number));
+       localStorage.setItem(CLIENT_KEY,JSON.stringify(map));
+       localStorage.setItem(ORDER_KEY,JSON.stringify(merged));
+       setClient(cloudOrders[0].client);
+       setHistory(cloudOrders);
+       setShowHistory(true);
+       setMsg(`Cliente encontrado. ${cloudOrders.length} pedido(s) registrado(s).`);
+       return;
+     }
+     if(clients[k]){
+       setClient(clients[k]);
+       const h=orders.filter(o=>key(o.client?.ruc)===k).sort((a,b)=>Number(b.number)-Number(a.number));
+       setHistory(h);
+       setShowHistory(h.length>0);
+       setMsg(h.length?`Cliente encontrado. ${h.length} pedido(s) local(es).`:"Cliente encontrado. Sin pedidos registrados.");
+     }else{
+       setClient({...emptyClient,ruc:query});
+       setHistory([]);
+       setShowHistory(false);
+       setMsg("Cliente no encontrado. Puede registrarlo.");
+     }
+   }catch(e){
+     console.error("Consulta RUC/C.I.:",e);
+     const clients=load(CLIENT_KEY,{}),orders=load(ORDER_KEY,[]);
+     if(clients[k]){
+       setClient(clients[k]);
+       const h=orders.filter(o=>key(o.client?.ruc)===k).sort((a,b)=>Number(b.number)-Number(a.number));
+       setHistory(h);
+       setShowHistory(h.length>0);
+       setMsg(h.length?`Cliente encontrado. ${h.length} pedido(s) local(es).`:"Cliente encontrado, pero no fue posible consultar pedidos en la nube.");
+     }else{
+       setClient({...emptyClient,ruc:query});
+       setHistory([]);
+       setShowHistory(false);
+       setMsg("No fue posible consultar el cliente.");
+     }
+   }
+ }
  function saveClient(){if(!client.ruc.trim())return setMsg("Ingrese RUC/C.I.");const c=load(CLIENT_KEY,{});c[key(client.ruc)]=client;localStorage.setItem(CLIENT_KEY,JSON.stringify(c));setMsg("Cliente guardado.")}
  function startEdit(){if(!isSaved)return setMsg("La nota todavía no fue guardada.");if(status==="ANULADA")return setMsg("Una nota anulada no puede modificarse.");setEditMode(true);setMsg(`Modo MODIFICAR activado para la nota N° ${String(number).padStart(6,"0")}.`)}
  function save(){if(status==="ANULADA")return setMsg("Esta nota está anulada y no puede modificarse.");if(isSaved&&!editMode)return setMsg("Presione MODIFICAR antes de cambiar esta nota.");if(!client.ruc.trim())return setMsg("Ingrese RUC/C.I.");const o=load(ORDER_KEY,[]),now=new Date().toISOString(),existing=o.findIndex(x=>Number(x.number)===Number(number));const previous=existing>=0?o[existing]:null;const record={number,date,type,currency,client:{...client},items:items.filter(i=>i.cantidad||i.unidad||i.descripcion||i.precio),total,obs,contado,plazo,semilla,venc,flete,status:"VIGENTE",createdAt:previous?.createdAt||now,modifiedAt:previous?now:undefined,modificationCount:Number(previous?.modificationCount||0)+(previous?1:0)};if(existing>=0)o[existing]=record;else o.push(record);localStorage.setItem(ORDER_KEY,JSON.stringify(o));const c=load(CLIENT_KEY,{});c[key(client.ruc)]=client;localStorage.setItem(CLIENT_KEY,JSON.stringify(c));if(existing<0){const next=Math.max(Number(number)+1,Number(localStorage.getItem(NEXT_KEY)||51));localStorage.setItem(NEXT_KEY,next);setNumber(next)}setIsSaved(true);setEditMode(false);localStorage.removeItem(DRAFT_KEY);setMsg(existing>=0?`Modificada y guardada N° ${String(number).padStart(6,"0")}.`:`Guardada N° ${String(number).padStart(6,"0")}.`)}
