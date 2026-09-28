@@ -43,6 +43,7 @@ function mapOrder(o, client, itemRows = []) {
     venc: o.vencimiento || "",
     flete: o.flete || "",
     status: o.estado || "VIGENTE",
+    currency: o.moneda || "PYG",
     cancelReason: o.justificativo_anulacion || "",
     cancelledAt: o.fecha_anulacion || ""
   };
@@ -164,7 +165,7 @@ async function saveOrder(record) {
   const user = await activeUser();
   const client = await upsertClient(record.client);
   const { data: pedido, error: pe } = await supabase.from("pedidos").upsert({
-    numero: n(record.number), fecha: record.date, tipo: record.type || "PEDIDO", cliente_id: client.id,
+    numero: n(record.number), fecha: record.date, tipo: record.type || "PEDIDO", moneda: record.currency || "PYG", cliente_id: client.id,
     vendedor_id: user.id, total: n(record.total), observaciones: record.obs || "", contado: !!record.contado,
     plazo: !!record.plazo, tratamiento_semilla: !!record.semilla, vencimiento: record.venc || null, flete: record.flete || "",
     estado: record.status || "VIGENTE", justificativo_anulacion: record.cancelReason || null,
