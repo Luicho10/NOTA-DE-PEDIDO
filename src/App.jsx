@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { installCloudStorageSync } from "./cloudStorage";
 import { findOrdersByRuc } from "./cloudStorage";
 
 const CLIENT_KEY="masfertil_clientes_v1", ORDER_KEY="masfertil_pedidos_v1", NEXT_KEY="masfertil_numero_v1", DRAFT_KEY="masfertil_nota_borrador_v1";
