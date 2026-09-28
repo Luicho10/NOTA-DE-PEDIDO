@@ -19,7 +19,6 @@ function grupo(n){n=Number(n);if(n===0)return "";if(n<10)return UNIDADES[n];if(n
 function numeroLetras(n){n=Math.floor(Number(n||0));if(n===0)return "CERO";if(n<1000)return grupo(n);if(n<1000000){const miles=Math.floor(n/1000),resto=n%1000;return (miles===1?"MIL":grupo(miles)+" MIL")+(resto?" "+grupo(resto):"")}if(n<1000000000){const millones=Math.floor(n/1000000),resto=n%1000000;return (millones===1?"UN MILLÓN":grupo(millones)+" MILLONES")+(resto?" "+numeroLetras(resto):"")}const milesMillones=Math.floor(n/1000000000),resto=n%1000000000;return (milesMillones===1?"MIL MILLONES":numeroLetras(milesMillones)+" MIL MILLONES")+(resto?" "+numeroLetras(resto):"")}
 function words(n,currency){const value=Math.max(0,Number(n||0)),entero=Math.floor(value+0.000001),centavos=Math.round((value-entero)*100);const unit=currency==="USD"?"DÓLARES AMERICANOS":"GUARANÍES";let text=`${unit} ${numeroLetras(entero)}`;if(currency==="USD"&&centavos>0)text+=` CON ${numeroLetras(centavos)} CENTAVOS`;return text}
 function rowHeight(description){const text=String(description||"");const len=text.length;const explicit=text.split("\n").length;const estimated=Math.ceil(Math.max(1,len)/48);return `${Math.max(5.5,Math.max(explicit,estimated)*5.5)}mm`}
-/g)||[]).length+1;const estimated=Math.ceil(Math.max(1,len)/48);return `${Math.max(5.5,Math.max(explicit,estimated)*5.5)}mm`}
 export default function App(){
  const draft=loadDraft()||{};
  const [number,setNumber]=useState(()=>draft.number??Math.max(51,Number(localStorage.getItem(NEXT_KEY)||51)));
