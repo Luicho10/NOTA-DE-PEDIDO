@@ -193,6 +193,31 @@ async function saveOrder(record) {
   });
 }
 
+const pendingOrderSaves = new Map();
+let cloudQueueRunning = false;
+
+function enqueueOrderSave(order) {
+  pendingOrderSaves.set(String(order.number), order);
+  if (cloudQueueRunning) return;
+  cloudQueueRunning = true;
+  (async () => {
+    try {
+      while (pendingOrderSaves.size) {
+        const [number, record] = pendingOrderSaves.entries().next().value;
+        pendingOrderSaves.delete(number);
+        try {
+          await saveOrder(record);
+        } catch (e) {
+          console.error("Sincronización de pedido:", e);
+        }
+      }
+    } finally {
+      cloudQueueRunning = false;
+      if (pendingOrderSaves.size) enqueueOrderSave(pendingOrderSaves.values().next().value);
+    }
+  })();
+}
+
 export function installCloudStorageSync() {
   const original = Storage.prototype.setItem;
   if (Storage.prototype.__masfertilCloudSync) return;
@@ -219,7 +244,7 @@ export function installCloudStorageSync() {
           return !old || JSON.stringify(old) !== JSON.stringify(o);
         });
         window.__masfertilCloudOrders = orders;
-        changed.forEach(o => saveOrder(o).catch(console.error));
+        changed.forEach(enqueueOrderSave);
       } catch (e) {
         console.error(e);
       }
